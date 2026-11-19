@@ -111,7 +111,7 @@
           <p class="eyebrow">YOUR NEXT STEP STARTS HERE</p>
           <h2>From the touchline<br>to <span>their radar.</span></h2>
           <p>No gatekeepers. No complicated process. Just a place to show your work and let your football do the talking.</p>
-          <a href="#create-profile" class="button button-primary">Get started — it's free <span aria-hidden="true">↗</span></a>
+          <a href="#create-profile" class="button button-primary">Player listing — $7.08/year <span aria-hidden="true">↗</span></a>
         </div>
         <div class="steps">
           <article class="step"><span class="step-number">01</span><div><h3>Make your profile</h3><p>Add your position, club, location, and the details that make you, you.</p></div><span class="step-arrow" aria-hidden="true">↗</span></article>
@@ -129,7 +129,7 @@
         <div class="join-note"><span aria-hidden="true">✳</span> Built for players. Backed by the community.</div>
       </div>
       <form class="profile-form" id="profile-form">
-        <div class="form-heading"><span>PLAYER SIGN-UP</span><span>01 — 04</span></div>
+        <div class="form-heading"><span>PLAYER PROFILE</span><span>PAID LISTING</span></div>
         <label for="player-name">Your name</label>
         <input id="player-name" name="name" type="text" placeholder="e.g. Alex Morgan" maxlength="40" required>
         <div class="form-row">
@@ -145,11 +145,31 @@
         <input id="player-location" name="location" type="text" placeholder="e.g. Manchester, UK" maxlength="50" required>
         <label for="player-club">Current club <span class="optional">(optional)</span></label>
         <input id="player-club" name="club" type="text" placeholder="e.g. Northside FC" maxlength="50">
+        <div class="media-section">
+          <div class="media-section-heading">
+            <span class="media-step">01</span>
+            <div><h3>Make your profile stand out</h3><p>Add a strong photo and a link to your best moments.</p></div>
+          </div>
+          <label for="player-photo">Profile photo <span class="optional">(optional)</span></label>
+          <input id="player-photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp">
+          <p class="field-help">JPG, PNG or WebP · up to 5 MB</p>
+          <div class="photo-preview" id="photo-preview" hidden>
+            <img id="photo-preview-image" alt="Preview of your profile photo">
+            <span>PHOTO PREVIEW</span>
+          </div>
+          <label for="player-video">Highlight video <span class="optional">(optional)</span></label>
+          <input id="player-video" name="video_url" type="url" placeholder="Paste a YouTube or Vimeo link">
+          <p class="field-help">Use a public YouTube or Vimeo link. Videos are hosted on their platform and shown after approval.</p>
+          <label class="media-consent" for="media-consent">
+            <input id="media-consent" name="media_consent" type="checkbox" required>
+            <span>I confirm I have permission to submit this profile and any media for public display. Players under 18 need parent or guardian approval.</span>
+          </label>
+        </div>
         <label for="payment-reference">Payment reference <span class="required">(required)</span></label>
         <input id="payment-reference" name="payment_reference" type="text" placeholder="Enter your transfer or payment reference" maxlength="100" required>
         <p class="payment-note">Annual listing: <strong>$7.08 ($0.59/month)</strong>. Your profile is published only after the payment is approved.</p>
         <button class="button button-primary submit-button" type="submit">Submit for payment approval <span aria-hidden="true">↗</span></button>
-        <p class="form-privacy">Your details help people discover your football. You can update your profile any time.</p>
+        <p class="form-privacy">Your profile and media are public if approved. Do not submit private or sensitive information.</p>
       </form>
     </section>
   </main>
