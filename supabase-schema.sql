@@ -23,6 +23,11 @@ for select
 to anon, authenticated
 using (status = 'approved');
 
+revoke select on public.player_profiles from anon, authenticated;
+grant select (name, position, age, location, club, profile_image_path, highlight_video_url)
+on public.player_profiles
+to anon, authenticated;
+
 drop policy if exists "Visitors can submit pending profiles" on public.player_profiles;
 create policy "Visitors can submit pending profiles"
 on public.player_profiles
