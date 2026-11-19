@@ -19,6 +19,10 @@ create table if not exists public.nextup_admins (
   created_at timestamptz not null default now()
 );
 
+insert into public.nextup_admins (user_id)
+values ('ba4af098-1caf-49ea-8df8-a7aafb30c186')
+on conflict (user_id) do nothing;
+
 alter table public.nextup_admins enable row level security;
 
 drop policy if exists "Admins can view their own access" on public.nextup_admins;
