@@ -15,6 +15,8 @@ const resultsCount = document.querySelector("#results-count");
 const emptyState = document.querySelector("#empty-state");
 const form = document.querySelector("#profile-form");
 const toast = document.querySelector("#toast");
+const confirmationDialog = document.querySelector("#submission-confirmation");
+const confirmationPlayerName = document.querySelector("#confirmation-player-name");
 const photoInput = document.querySelector("#player-photo");
 const photoPreview = document.querySelector("#photo-preview");
 const photoPreviewImage = document.querySelector("#photo-preview-image");
@@ -163,6 +165,7 @@ form.addEventListener("submit", async (event) => {
   if (!form.reportValidity()) return;
 
   const data = new FormData(form);
+  const playerName = data.get("name").trim();
   const videoUrl = data.get("video_url").trim();
   const highlightVideoUrl = videoUrl ? normalizeHighlightUrl(videoUrl) : "";
   if (videoUrl && !highlightVideoUrl) {
@@ -194,7 +197,7 @@ form.addEventListener("submit", async (event) => {
     }
 
     const { error } = await supabase.from("player_profiles").insert({
-      name: data.get("name").trim(),
+      name: playerName,
       position: data.get("position"),
       age: Number(data.get("age")),
       location: data.get("location").trim(),
@@ -207,7 +210,7 @@ form.addEventListener("submit", async (event) => {
     if (error) throw error;
   } catch (error) {
     console.error("Could not submit your NextUp profile.", error);
-    showToast("Your profile could not be submitted. Please try again.");
+    showToast(`Your profile could not be submitted: ${error.message || "please try again."}`);
     return;
   } finally {
     submitButton.disabled = false;
@@ -219,8 +222,9 @@ form.addEventListener("submit", async (event) => {
   photoPreviewImage.removeAttribute("src");
   if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
   photoPreviewUrl = undefined;
-  document.querySelector("#players").scrollIntoView({ behavior: "smooth" });
-  showToast("Payment details submitted. Your profile will go live after approval.");
+  confirmationPlayerName.textContent = playerName.split(/\s+/)[0];
+  if (typeof confirmationDialog.showModal === "function") confirmationDialog.showModal();
+  else showToast("Your registration was received. Your profile will go live after payment approval.");
 });
 
 async function loadPlayers() {

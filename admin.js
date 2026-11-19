@@ -5,7 +5,10 @@ const dashboard = document.querySelector("#admin-dashboard");
 const queue = document.querySelector("#admin-queue");
 const message = document.querySelector("#admin-message");
 const signOutButton = document.querySelector("#admin-signout");
+const refreshButton = document.querySelector("#admin-refresh");
 const photoBucket = "player-images";
+let queueRefreshTimer;
+let queueLoading = false;
 
 function showMessage(text, tone) {
   message.textContent = text;
@@ -129,6 +132,8 @@ function makePlayerCard(player) {
 }
 
 async function loadPendingPlayers() {
+  if (queueLoading) return;
+  queueLoading = true;
   queue.replaceChildren();
   showMessage("Loading pending registrations...");
 
@@ -143,7 +148,7 @@ async function loadPendingPlayers() {
     if (!data.length) {
       const empty = document.createElement("p");
       empty.className = "admin-empty";
-      empty.textContent = "No pending registrations. New submissions will appear here.";
+      empty.textContent = "Nothing pending. If you expected a player, check Supabase Table Editor → player_profiles and look for a row with status “pending”.";
       queue.append(empty);
       showMessage("No pending registrations.");
       return;
@@ -153,7 +158,9 @@ async function loadPendingPlayers() {
     showMessage(`${data.length} registration${data.length === 1 ? "" : "s"} awaiting review.`);
   } catch (error) {
     console.error("Could not load pending registrations.", error);
-    showMessage("Could not load registrations. Check your admin access and Supabase setup.", "error");
+    showMessage(`Could not load registrations: ${error.message || "check your admin access and Supabase setup."}`, "error");
+  } finally {
+    queueLoading = false;
   }
 }
 
@@ -207,6 +214,10 @@ async function openAdminDashboard(user) {
     loginPanel.hidden = true;
     dashboard.hidden = false;
     await loadPendingPlayers();
+    window.clearInterval(queueRefreshTimer);
+    queueRefreshTimer = window.setInterval(() => {
+      if (!dashboard.hidden) loadPendingPlayers();
+    }, 15000);
   } catch (error) {
     console.error("Could not verify the admin account.", error);
     showMessage("Could not verify admin access. Check the Supabase setup.", "error");
@@ -239,6 +250,15 @@ loginForm.addEventListener("submit", async (event) => {
   }
 });
 
+refreshButton.addEventListener("click", async () => {
+  refreshButton.disabled = true;
+  try {
+    await loadPendingPlayers();
+  } finally {
+    refreshButton.disabled = false;
+  }
+});
+
 signOutButton.addEventListener("click", async () => {
   try {
     const { error } = await nextupClient.auth.signOut();
@@ -246,6 +266,7 @@ signOutButton.addEventListener("click", async () => {
 
     dashboard.hidden = true;
     loginPanel.hidden = false;
+    window.clearInterval(queueRefreshTimer);
     loginForm.reset();
     showMessage("You have signed out.");
   } catch (error) {

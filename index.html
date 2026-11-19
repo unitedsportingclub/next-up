@@ -181,5 +181,14 @@
     <span>© 2025 NEXTUP FOOTBALL</span>
   </footer>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <dialog class="submission-dialog" id="submission-confirmation" aria-labelledby="confirmation-title" aria-describedby="confirmation-message">
+    <div class="submission-dialog-content">
+      <span class="confirmation-mark" aria-hidden="true">✓</span>
+      <p class="eyebrow">REGISTRATION RECEIVED</p>
+      <h2 id="confirmation-title">Thanks, <span id="confirmation-player-name">player</span>.</h2>
+      <p id="confirmation-message">We received your details. Your profile will be published after we verify your payment and approve it.</p>
+      <form method="dialog"><button class="button button-primary" type="submit">Got it</button></form>
+    </div>
+  </dialog>
 </body>
 </html>
