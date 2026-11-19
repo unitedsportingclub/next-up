@@ -10,6 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="script.js" defer></script>
 </head>
 <body>
@@ -144,7 +145,10 @@
         <input id="player-location" name="location" type="text" placeholder="e.g. Manchester, UK" maxlength="50" required>
         <label for="player-club">Current club <span class="optional">(optional)</span></label>
         <input id="player-club" name="club" type="text" placeholder="e.g. Northside FC" maxlength="50">
-        <button class="button button-primary submit-button" type="submit">Create my player card <span aria-hidden="true">↗</span></button>
+        <label for="payment-reference">Payment reference <span class="required">(required)</span></label>
+        <input id="payment-reference" name="payment_reference" type="text" placeholder="Enter your transfer or payment reference" maxlength="100" required>
+        <p class="payment-note">Annual listing: <strong>$7.08 ($0.59/month)</strong>. Your profile is published only after the payment is approved.</p>
+        <button class="button button-primary submit-button" type="submit">Submit for payment approval <span aria-hidden="true">↗</span></button>
         <p class="form-privacy">Your details help people discover your football. You can update your profile any time.</p>
       </form>
     </section>

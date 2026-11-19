@@ -134,7 +134,10 @@ h2 { margin-bottom: 0; font-size: clamp(35px, 4vw, 49px); line-height: 1.06; }
 .profile-form input:focus, .profile-form select:focus, .directory-controls select:focus, .search-box:focus-within { border-color: #87a85a; box-shadow: 0 0 0 2px #c7f36b33; }
 .profile-form input::placeholder { color: #adb4aa; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.optional { color: #9aa397; font-weight: 400; }
+.optional, .required { color: #9aa397; font-weight: 400; }
+.required { color: #9a6c3c; }
+.payment-note { margin: 10px 0 0; color: #788175; font-size: 8px; line-height: 1.6; }
+.submit-button:disabled { cursor: wait; opacity: .65; transform: none; }
 .submit-button { width: 100%; margin-top: 19px; }
 .form-privacy { margin: 11px 0 0; color: #929b90; font-size: 8px; line-height: 1.6; text-align: center; }
 .site-footer { min-height: 76px; padding: 18px 7.2%; display: flex; align-items: center; justify-content: space-between; background: #e9ebe3; }
