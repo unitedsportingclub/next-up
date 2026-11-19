@@ -7,9 +7,7 @@ const starterPlayers = [
   { name: "Ethan Clarke", position: "Midfielder", age: 20, location: "Nottingham", club: "Forest Fields FC", initials: "EC" }
 ];
 
-const SUPABASE_URL = "https://ugsxzcbtzebyjtxjslsv.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_iiASKujrPOMY_Fsby7aYAg_Nbw8hSBE";
-const supabase = window.supabase?.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+const supabase = window.nextupSupabase;
 const grid = document.querySelector("#player-grid");
 const searchInput = document.querySelector("#player-search");
 const positionFilter = document.querySelector("#position-filter");
@@ -32,9 +30,8 @@ async function getSupabasePlayers() {
   if (!supabase) return [];
 
   const { data, error } = await supabase
-    .from("player_profiles")
-    .select("name, position, age, location, club, profile_image_path, highlight_video_url")
-    .eq("status", "approved")
+    .from("approved_player_profiles")
+    .select("name, position, age, location, club, profile_image_path, highlight_video_url, created_at")
     .order("created_at", { ascending: false });
 
   if (error) {

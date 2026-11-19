@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#101812">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Admin — NextUp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="admin.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-client.js" defer></script>
+  <script src="admin.js" defer></script>
+</head>
+<body class="admin-body">
+  <header class="admin-header">
+    <a class="brand" href="index.html" aria-label="NextUp home">
+      <span class="brand-mark" aria-hidden="true">N</span>
+      <span>nextup<span class="brand-dot">.</span></span>
+    </a>
+    <a class="admin-back-link" href="index.html">Back to website <span aria-hidden="true">↗</span></a>
+  </header>
+
+  <main class="admin-main">
+    <div class="admin-page-heading">
+      <p class="eyebrow">NEXTUP MANAGEMENT</p>
+      <h1>Player approvals</h1>
+      <p>Verify each payment before approving a player profile.</p>
+    </div>
+
+    <p class="admin-message" id="admin-message" role="status" aria-live="polite"></p>
+
+    <section class="admin-login-panel" id="admin-login-panel">
+      <h2>Admin sign-in</h2>
+      <p>Sign in with the admin account connected to this NextUp project.</p>
+      <form class="admin-login-form" id="admin-login-form">
+        <label for="admin-email">Email</label>
+        <input id="admin-email" name="email" type="email" autocomplete="username" required>
+        <label for="admin-password">Password</label>
+        <input id="admin-password" name="password" type="password" autocomplete="current-password" required>
+        <button class="button button-primary" type="submit">Sign in <span aria-hidden="true">↗</span></button>
+      </form>
+    </section>
+
+    <section class="admin-dashboard" id="admin-dashboard" hidden>
+      <div class="admin-queue-heading">
+        <div>
+          <p class="eyebrow">PAYMENT REVIEW</p>
+          <h2>Pending registrations</h2>
+        </div>
+        <button class="button button-outline admin-signout" id="admin-signout" type="button">Sign out</button>
+      </div>
+      <div class="admin-queue" id="admin-queue" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <footer class="admin-footer">
+    <span>Private admin area · Only approve payments you have verified.</span>
+    <a href="index.html">NEXTUP FOOTBALL</a>
+  </footer>
+</body>
+</html>
