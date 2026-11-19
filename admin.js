@@ -1,4 +1,4 @@
-const supabase = window.nextupSupabase;
+const nextupClient = window.nextupSupabase;
 const loginPanel = document.querySelector("#admin-login-panel");
 const loginForm = document.querySelector("#admin-login-form");
 const dashboard = document.querySelector("#admin-dashboard");
@@ -63,7 +63,7 @@ function makePlayerCard(player) {
   if (player.profile_image_path) {
     const image = document.createElement("img");
     image.alt = "";
-    image.src = supabase.storage.from(photoBucket).getPublicUrl(player.profile_image_path).data.publicUrl;
+    image.src = nextupClient.storage.from(photoBucket).getPublicUrl(player.profile_image_path).data.publicUrl;
     image.addEventListener("error", () => {
       avatar.textContent = initialsFor(player.name);
     }, { once: true });
@@ -96,7 +96,7 @@ function makePlayerCard(player) {
       const image = document.createElement("img");
       image.alt = `Profile photo for ${player.name}`;
       image.loading = "lazy";
-      image.src = supabase.storage.from(photoBucket).getPublicUrl(player.profile_image_path).data.publicUrl;
+      image.src = nextupClient.storage.from(photoBucket).getPublicUrl(player.profile_image_path).data.publicUrl;
       media.append(image);
     }
     if (videoUrl) {
@@ -133,7 +133,7 @@ async function loadPendingPlayers() {
   showMessage("Loading pending registrations...");
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await nextupClient
       .from("player_profiles")
       .select("id, name, position, age, location, club, payment_reference, created_at, profile_image_path, highlight_video_url")
       .eq("status", "pending")
@@ -163,7 +163,7 @@ async function updateStatus(playerId, status, actions) {
   showMessage(status === "approved" ? "Approving player..." : "Rejecting registration...");
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await nextupClient
       .from("player_profiles")
       .update({ status })
       .eq("id", playerId)
@@ -189,14 +189,14 @@ async function updateStatus(playerId, status, actions) {
 
 async function openAdminDashboard(user) {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await nextupClient
       .from("nextup_admins")
       .select("user_id")
       .eq("user_id", user.id)
       .maybeSingle();
     if (error) throw error;
     if (!data) {
-      const { error: signOutError } = await supabase.auth.signOut();
+      const { error: signOutError } = await nextupClient.auth.signOut();
       if (signOutError) console.error("Could not sign out an unauthorized admin account.", signOutError);
       loginPanel.hidden = false;
       dashboard.hidden = true;
@@ -215,7 +215,7 @@ async function openAdminDashboard(user) {
 
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  if (!supabase) {
+  if (!nextupClient) {
     showMessage("The sign-in service is unavailable. Please try again later.", "error");
     return;
   }
@@ -225,7 +225,7 @@ loginForm.addEventListener("submit", async (event) => {
   showMessage("Signing in...");
   try {
     const formData = new FormData(loginForm);
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await nextupClient.auth.signInWithPassword({
       email: formData.get("email").trim(),
       password: formData.get("password")
     });
@@ -241,7 +241,7 @@ loginForm.addEventListener("submit", async (event) => {
 
 signOutButton.addEventListener("click", async () => {
   try {
-    const { error } = await supabase.auth.signOut();
+    const { error } = await nextupClient.auth.signOut();
     if (error) throw error;
 
     dashboard.hidden = true;
@@ -255,12 +255,12 @@ signOutButton.addEventListener("click", async () => {
 });
 
 async function restoreAdminSession() {
-  if (!supabase) {
+  if (!nextupClient) {
     showMessage("The sign-in service is unavailable. Please try again later.", "error");
     return;
   }
 
-  const { data, error } = await supabase.auth.getSession();
+  const { data, error } = await nextupClient.auth.getSession();
   if (error) {
     console.error("Could not restore the admin session.", error);
     showMessage("Could not restore your sign-in. Please sign in again.", "error");
