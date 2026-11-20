@@ -117,7 +117,7 @@
           <p class="eyebrow">YOUR NEXT STEP STARTS HERE</p>
           <h2>From the touchline<br>to <span>their radar.</span></h2>
           <p>No gatekeepers. No complicated process. Just a place to show your work and let your football do the talking.</p>
-          <a href="#create-profile" class="button button-primary">Player listing — $7.08/year <span aria-hidden="true">↗</span></a>
+          <a href="#create-profile" class="button button-primary">Player listing — $7.08 USD/year <span aria-hidden="true">↗</span></a>
         </div>
         <div class="steps">
           <article class="step"><span class="step-number">01</span><div><h3>Make your profile</h3><p>Add your position, club, location, and the details that make you, you.</p></div><span class="step-arrow" aria-hidden="true">↗</span></article>
@@ -150,10 +150,10 @@
               <option>Forward</option><option>Midfielder</option><option>Defender</option><option>Goalkeeper</option>
             </select>
           </div>
-          <div><label for="player-age">Age</label><input id="player-age" name="age" type="number" placeholder="e.g. 17" min="13" max="45" required></div>
+          <div><label for="player-age">Age</label><input id="player-age" name="age" type="number" placeholder="e.g. 17" min="13" max="45" required><p class="field-help">Your exact age is used for review; only an age range appears on your public profile.</p></div>
         </div>
-        <label for="player-location">Your town or city</label>
-        <input id="player-location" name="location" type="text" placeholder="e.g. Manchester, UK" maxlength="50" required>
+        <label for="player-region">Your region, state or province</label>
+        <input id="player-region" name="public_region" type="text" placeholder="e.g. Greater Accra Region" maxlength="80" required>
         <label for="player-club">Current club <span class="optional">(optional)</span></label>
         <input id="player-club" name="club" type="text" placeholder="e.g. Northside FC" maxlength="50">
         <div class="media-section">
@@ -173,15 +173,21 @@
           <p class="field-help">Use a public YouTube or Vimeo link. Videos are hosted on their platform and shown after approval.</p>
           <label class="media-consent" for="media-consent">
             <input id="media-consent" name="media_consent" type="checkbox" required>
-            <span>I confirm I have permission to submit this profile and any media for public display. Players under 18 need parent or guardian approval.</span>
+            <span>I confirm I have permission to publish this profile and any media I submit.</span>
           </label>
+          <div class="guardian-consent-field" id="guardian-consent-field" hidden>
+            <label class="media-consent" for="guardian-consent">
+              <input id="guardian-consent" name="guardian_consent" type="checkbox">
+              <span>I confirm a parent or guardian has reviewed and approved this public profile and its media.</span>
+            </label>
+          </div>
         </div>
         <label for="payment-reference">Payment reference <span class="required">(required)</span></label>
         <input id="payment-reference" name="payment_reference" type="text" placeholder="Enter your transfer or payment reference" maxlength="100" required>
-        <p class="payment-note">Annual listing: <strong>$7.08 ($0.59/month)</strong>. Your profile is published only after the payment is approved. Need bank or MoMo instructions? Request them privately on WhatsApp.</p>
+        <p class="payment-note"><strong>$7.08 USD per year.</strong> NextUp does not process payments on this site. First request payment instructions privately on WhatsApp, then submit your transfer reference here. The profile is published only after manual payment verification and profile approval. A listing does not guarantee a trial, contract or contact from a scout. Never share a PIN, password or one-time code.</p>
         <a class="payment-contact-link" href="https://wa.me/233531919451" target="_blank" rel="noopener noreferrer">Ask for payment details on WhatsApp <span aria-hidden="true">↗</span></a>
-        <button class="button button-primary submit-button" type="submit">Submit for payment approval <span aria-hidden="true">↗</span></button>
-        <p class="form-privacy">Your profile and media are public if approved. Do not submit private or sensitive information.</p>
+        <button class="button button-primary submit-button" type="submit">Submit for manual review <span aria-hidden="true">↗</span></button>
+        <p class="form-privacy">Approved profiles show your name, age range, region, position, club and any submitted photo or video. <a href="privacy.html">Read player privacy &amp; safety</a>. Never submit private or sensitive information.</p>
       </form>
     </section>
   </main>
@@ -193,6 +199,7 @@
       <span>Scout · Helping hidden talent get seen</span>
     </div>
     <a class="footer-whatsapp" href="https://wa.me/233531919451" target="_blank" rel="noopener noreferrer">WhatsApp for help · +233531919451 <span aria-hidden="true">↗</span></a>
+    <a class="footer-whatsapp" href="privacy.html">Privacy &amp; player safety</a>
     <p>For the ones who never stopped believing.</p>
     <span>© 2025 NEXTUP FOOTBALL</span>
   </footer>
@@ -210,7 +217,7 @@
       <span class="confirmation-mark" aria-hidden="true">✓</span>
       <p class="eyebrow">REGISTRATION RECEIVED</p>
       <h2 id="confirmation-title">Thanks, <span id="confirmation-player-name">player</span>.</h2>
-      <p id="confirmation-message">We received your details. Your profile will be published after we verify your payment and approve it.</p>
+      <p id="confirmation-message">We received your details. We’ll review your profile and payment reference manually. Your profile is published only if both are approved.</p>
       <form method="dialog"><button class="button button-primary" type="submit">Got it</button></form>
     </div>
   </dialog>

@@ -12,7 +12,9 @@ create table if not exists public.player_profiles (
 
 alter table public.player_profiles
   add column if not exists profile_image_path text,
-  add column if not exists highlight_video_url text;
+  add column if not exists highlight_video_url text,
+  add column if not exists public_region text,
+  add column if not exists guardian_consent boolean not null default false;
 
 create table if not exists public.nextup_admins (
   user_id uuid primary key references auth.users(id) on delete cascade,
@@ -85,11 +87,29 @@ revoke update on public.player_profiles from public, anon, authenticated;
 grant update (status) on public.player_profiles to authenticated;
 revoke delete on public.player_profiles from public, anon, authenticated;
 grant delete on public.player_profiles to authenticated;
-grant insert (name, position, age, location, club, payment_reference, profile_image_path, highlight_video_url, status)
+grant insert (name, position, age, location, public_region, guardian_consent, club, payment_reference, profile_image_path, highlight_video_url, status)
 on public.player_profiles to anon, authenticated;
 
-create or replace view public.approved_player_profiles as
-select name, position, age, location, club, profile_image_path, highlight_video_url, created_at
+drop policy if exists "Public can view player photos" on storage.objects;
+drop policy if exists "Visitors can view approved player photos" on storage.objects;
+drop view if exists public.approved_player_profiles;
+create view public.approved_player_profiles as
+select
+  name,
+  position,
+  case
+    when age between 13 and 15 then '13-15'
+    when age between 16 and 17 then '16-17'
+    when age between 18 and 21 then '18-21'
+    when age between 22 and 25 then '22-25'
+    when age between 26 and 30 then '26-30'
+    else '31+'
+  end as age_range,
+  public_region as region,
+  club,
+  profile_image_path,
+  highlight_video_url,
+  created_at
 from public.player_profiles
 where status = 'approved';
 
@@ -105,6 +125,8 @@ with check (
   status = 'pending'
   and payment_reference is not null
   and char_length(payment_reference) between 1 and 100
+  and char_length(btrim(public_region)) between 2 and 80
+  and (age >= 18 or guardian_consent is true)
 );
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)

@@ -12,6 +12,9 @@ const photoInput = document.querySelector("#player-photo");
 const photoPreview = document.querySelector("#photo-preview");
 const photoPreviewImage = document.querySelector("#photo-preview-image");
 const videoInput = document.querySelector("#player-video");
+const ageInput = document.querySelector("#player-age");
+const guardianConsentField = document.querySelector("#guardian-consent-field");
+const guardianConsentInput = document.querySelector("#guardian-consent");
 let toastTimer;
 let photoPreviewUrl;
 
@@ -28,7 +31,7 @@ async function getSupabasePlayers() {
 
   const { data, error } = await nextupClient
     .from("approved_player_profiles")
-    .select("name, position, age, location, club, profile_image_path, highlight_video_url, created_at")
+    .select("name, position, age_range, region, club, profile_image_path, highlight_video_url, created_at")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -71,7 +74,7 @@ function makeCard(player, index) {
   card.className = "player-card";
   const safeName = escapeHTML(player.name);
   const safePosition = escapeHTML(player.position);
-  const safeLocation = escapeHTML(player.location);
+  const safeRegion = escapeHTML(player.region || "Region not listed");
   const safeClub = escapeHTML(player.club || "Independent");
   const initials = escapeHTML(player.initials || initialsFor(player.name));
   const tone = index % 5 ? ` tone-${index % 5}` : "";
@@ -79,8 +82,8 @@ function makeCard(player, index) {
   const highlightUrl = normalizeHighlightUrl(player.highlight_video_url);
   card.innerHTML = `
     <div class="card-top"><span class="position-badge">${safePosition}</span><span class="card-number">${String(index + 1).padStart(2, "0")}</span></div>
-    <div class="card-person"><div class="player-avatar${tone}" aria-hidden="true">${imageUrl ? '<img alt="" loading="lazy">' : initials}</div><div class="card-person-copy"><h3>${safeName}</h3><p>${safeLocation}</p></div></div>
-    <div class="card-details"><span><strong>${escapeHTML(String(player.age))}</strong>AGE</span><span><strong>${safePosition}</strong>POSITION</span><span class="card-club"><strong>${safeClub}</strong>CLUB</span></div>
+    <div class="card-person"><div class="player-avatar${tone}" aria-hidden="true">${imageUrl ? '<img alt="" loading="lazy">' : initials}</div><div class="card-person-copy"><h3>${safeName}</h3><p>${safeRegion}</p></div></div>
+    <div class="card-details"><span><strong>${escapeHTML(player.age_range)}</strong>AGE RANGE</span><span><strong>${safePosition}</strong>POSITION</span><span class="card-club"><strong>${safeClub}</strong>CLUB</span></div>
     ${highlightUrl ? `<a class="highlight-link" href="${escapeHTML(highlightUrl)}" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">▶</span> Watch highlights <span aria-hidden="true">↗</span></a>` : ""}`;
   const photo = card.querySelector(".player-avatar img");
   if (photo) {
@@ -136,7 +139,7 @@ function renderPlayers() {
   const query = searchInput.value.trim().toLowerCase();
   const position = positionFilter.value;
   const matches = renderedServerPlayers.filter((player) => {
-    const matchesQuery = `${player.name} ${player.location} ${player.club || ""}`.toLowerCase().includes(query);
+    const matchesQuery = `${player.name} ${player.region || ""} ${player.club || ""}`.toLowerCase().includes(query);
     return matchesQuery && (position === "all" || player.position === position);
   });
   grid.replaceChildren(...matches.map(makeCard));
@@ -164,6 +167,17 @@ function showToast(message) {
 
 searchInput.addEventListener("input", renderPlayers);
 positionFilter.addEventListener("change", renderPlayers);
+
+function updateGuardianConsentRequirement() {
+  const age = Number(ageInput.value);
+  const guardianRequired = age >= 13 && age < 18;
+  guardianConsentField.hidden = !guardianRequired;
+  guardianConsentInput.required = guardianRequired;
+  if (!guardianRequired) guardianConsentInput.checked = false;
+}
+
+ageInput.addEventListener("input", updateGuardianConsentRequirement);
+updateGuardianConsentRequirement();
 
 photoInput.addEventListener("change", () => {
   const photo = photoInput.files[0];
@@ -225,7 +239,9 @@ form.addEventListener("submit", async (event) => {
       name: playerName,
       position: data.get("position"),
       age: Number(data.get("age")),
-      location: data.get("location").trim(),
+      location: data.get("public_region").trim(),
+      public_region: data.get("public_region").trim(),
+      guardian_consent: data.get("guardian_consent") === "on",
       club: data.get("club").trim(),
       payment_reference: data.get("payment_reference").trim(),
       profile_image_path: photoPath,
@@ -249,17 +265,18 @@ form.addEventListener("submit", async (event) => {
     return;
   } finally {
     submitButton.disabled = false;
-    submitButton.innerHTML = 'Submit for payment approval <span aria-hidden="true">↗</span>';
+    submitButton.innerHTML = 'Submit for manual review <span aria-hidden="true">↗</span>';
   }
 
   form.reset();
+  updateGuardianConsentRequirement();
   photoPreview.hidden = true;
   photoPreviewImage.removeAttribute("src");
   if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
   photoPreviewUrl = undefined;
   confirmationPlayerName.textContent = playerName.split(/\s+/)[0];
   if (typeof confirmationDialog.showModal === "function") confirmationDialog.showModal();
-  else showToast("Your registration was received. Your profile will go live after payment approval.");
+  else showToast("Your registration was received for manual profile and payment review.");
 });
 
 async function loadPlayers() {
