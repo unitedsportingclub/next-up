@@ -76,6 +76,8 @@ revoke select on public.player_profiles from public, anon, authenticated;
 grant select on public.player_profiles to authenticated;
 revoke update on public.player_profiles from public, anon, authenticated;
 grant update (status) on public.player_profiles to authenticated;
+grant insert (name, position, age, location, club, payment_reference, profile_image_path, highlight_video_url, status)
+on public.player_profiles to anon, authenticated;
 
 create or replace view public.approved_player_profiles as
 select name, position, age, location, club, profile_image_path, highlight_video_url, created_at
