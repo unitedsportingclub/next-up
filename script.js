@@ -7,7 +7,7 @@ const starterPlayers = [
   { name: "Ethan Clarke", position: "Midfielder", age: 20, location: "Nottingham", club: "Forest Fields FC", initials: "EC" }
 ];
 
-const supabase = window.nextupSupabase;
+const nextupClient = window.nextupSupabase;
 const grid = document.querySelector("#player-grid");
 const searchInput = document.querySelector("#player-search");
 const positionFilter = document.querySelector("#position-filter");
@@ -29,9 +29,9 @@ const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 const allowedPhotoTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 async function getSupabasePlayers() {
-  if (!supabase) return [];
+  if (!nextupClient) return [];
 
-  const { data, error } = await supabase
+  const { data, error } = await nextupClient
     .from("approved_player_profiles")
     .select("name, position, age, location, club, profile_image_path, highlight_video_url, created_at")
     .order("created_at", { ascending: false });
@@ -44,7 +44,7 @@ async function getSupabasePlayers() {
 
   return data.map((player) => {
     const imageUrl = player.profile_image_path
-      ? supabase.storage.from(PHOTO_BUCKET).getPublicUrl(player.profile_image_path).data.publicUrl
+      ? nextupClient.storage.from(PHOTO_BUCKET).getPublicUrl(player.profile_image_path).data.publicUrl
       : "";
     return {
       ...player,
@@ -175,7 +175,7 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
-  if (!supabase) {
+  if (!nextupClient) {
     showToast("The submission service is unavailable. Please try again later.");
     return;
   }
@@ -190,13 +190,13 @@ form.addEventListener("submit", async (event) => {
     if (photo) {
       const extension = photo.type === "image/jpeg" ? "jpg" : photo.type.split("/")[1];
       photoPath = `profiles/${crypto.randomUUID()}.${extension}`;
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError } = await nextupClient.storage
         .from(PHOTO_BUCKET)
         .upload(photoPath, photo, { contentType: photo.type, upsert: false });
       if (uploadError) throw uploadError;
     }
 
-    const { error } = await supabase.from("player_profiles").insert({
+    const { error } = await nextupClient.from("player_profiles").insert({
       name: playerName,
       position: data.get("position"),
       age: Number(data.get("age")),
