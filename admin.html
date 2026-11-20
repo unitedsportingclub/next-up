@@ -60,11 +60,32 @@
             <option value="rejected">Rejected profiles</option>
             <option value="all">All profiles</option>
           </select>
-          <button class="button button-outline admin-refresh" id="admin-refresh" type="button">Refresh profiles</button>
+          <button class="button button-outline admin-refresh" id="admin-refresh" type="button">Refresh dashboard</button>
           <button class="button button-outline admin-signout" id="admin-signout" type="button">Sign out</button>
         </div>
       </div>
       <div class="admin-queue" id="admin-queue" aria-live="polite"></div>
+      <section class="admin-inquiry-section" aria-labelledby="admin-inquiry-title">
+        <div class="admin-inquiry-heading">
+          <div>
+            <p class="eyebrow">SCOUT, CLUB &amp; COACH INTEREST</p>
+            <h2 id="admin-inquiry-title">Introduction requests</h2>
+            <p class="admin-inquiry-guidance">Contact the player or guardian first. Share scout contact details only if they agree to the introduction.</p>
+          </div>
+          <label>
+            <span class="visually-hidden">Filter introduction requests</span>
+            <select class="admin-status-filter" id="admin-inquiry-filter">
+              <option value="new">New requests</option>
+              <option value="player_contacted">Player/guardian contacted</option>
+              <option value="introduced">Introduced</option>
+              <option value="closed">Closed</option>
+              <option value="all">All requests</option>
+            </select>
+          </label>
+        </div>
+        <p class="admin-inquiry-message" id="admin-inquiry-message" role="status" aria-live="polite"></p>
+        <div class="admin-inquiry-list" id="admin-inquiry-list" aria-live="polite"></div>
+      </section>
     </section>
   </main>
 

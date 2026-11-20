@@ -156,9 +156,31 @@
         <input id="player-region" name="public_region" type="text" placeholder="e.g. Greater Accra Region" maxlength="80" required>
         <label for="player-club">Current club <span class="optional">(optional)</span></label>
         <input id="player-club" name="club" type="text" placeholder="e.g. Northside FC" maxlength="50">
+        <div class="private-contact-section">
+          <div class="media-section-heading">
+            <span class="media-step">02</span>
+            <div><h3>Private contact for introductions</h3><p>This number is visible only to authorized NextUp admins. It is never shown on your public profile.</p></div>
+          </div>
+          <label for="contact-name">Name of contact person</label>
+          <input id="contact-name" name="contact_name" type="text" placeholder="Player, parent/guardian or manager" minlength="2" maxlength="80" required>
+          <label for="contact-role">Contact is the</label>
+          <select id="contact-role" name="contact_role" required>
+            <option value="player">Player (18+)</option>
+            <option value="parent_guardian">Parent or guardian</option>
+            <option value="manager">Manager</option>
+          </select>
+          <p class="field-help guardian-contact-help" id="guardian-contact-help" hidden>For players under 18, this must be a parent or guardian’s number.</p>
+          <label for="contact-whatsapp">Private WhatsApp number</label>
+          <input id="contact-whatsapp" name="contact_whatsapp" type="tel" inputmode="tel" autocomplete="tel" placeholder="+233531234567" required>
+          <p class="field-help">Include the +country code. We use this only to coordinate an introduction if an interested scout contacts us.</p>
+          <label class="media-consent" for="contact-consent">
+            <input id="contact-consent" name="contact_consent" type="checkbox" required>
+            <span>I have permission from this contact to share their WhatsApp number with NextUp for private introduction requests. It will not be public.</span>
+          </label>
+        </div>
         <div class="media-section">
           <div class="media-section-heading">
-            <span class="media-step">01</span>
+            <span class="media-step">03</span>
             <div><h3>Make your profile stand out</h3><p>Add a strong photo and a link to your best moments.</p></div>
           </div>
           <label for="player-photo">Profile photo <span class="optional">(optional)</span></label>
@@ -187,7 +209,7 @@
         <p class="payment-note"><strong>$7.08 USD per year.</strong> NextUp does not process payments on this site. First request payment instructions privately on WhatsApp, then submit your transfer reference here. The profile is published only after manual payment verification and profile approval. A listing does not guarantee a trial, contract or contact from a scout. Never share a PIN, password or one-time code.</p>
         <a class="payment-contact-link" href="https://wa.me/233531919451" target="_blank" rel="noopener noreferrer">Ask for payment details on WhatsApp <span aria-hidden="true">↗</span></a>
         <button class="button button-primary submit-button" type="submit">Submit for manual review <span aria-hidden="true">↗</span></button>
-        <p class="form-privacy">Approved profiles show your name, age range, region, position, club and any submitted photo or video. <a href="privacy.html">Read player privacy &amp; safety</a>. Never submit private or sensitive information.</p>
+        <p class="form-privacy">Approved profiles show your name, age range, region, position, club and any submitted photo or video. Your contact number stays private. <a href="privacy.html">Read player privacy &amp; safety</a>. Never submit private or sensitive information.</p>
       </form>
     </section>
   </main>
@@ -212,6 +234,30 @@
     <span class="whatsapp-fab-copy"><strong>WhatsApp help</strong><small>+233531919451</small></span>
   </a>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <dialog class="submission-dialog inquiry-dialog" id="inquiry-dialog" aria-labelledby="inquiry-title" aria-describedby="inquiry-description">
+    <div class="inquiry-dialog-content">
+      <p class="eyebrow">PRIVATE INTRODUCTION REQUEST</p>
+      <h2 id="inquiry-title">Interested in <span id="inquiry-player-name">this player</span>?</h2>
+      <p id="inquiry-description">Send a request to NextUp. Your details will be shared only with the site admin, who will ask the player or their parent/guardian before making an introduction. This form does not independently verify identities.</p>
+      <form class="inquiry-form" id="inquiry-form">
+        <label for="inquiry-requester-name">Your name</label>
+        <input id="inquiry-requester-name" name="requester_name" type="text" minlength="2" maxlength="80" autocomplete="name" required>
+        <label for="inquiry-organization">Your role, club or organization</label>
+        <input id="inquiry-organization" name="requester_organization" type="text" minlength="2" maxlength="100" required placeholder="e.g. coach at a club or independent scout">
+        <label for="inquiry-email">Email <span class="optional">(provide email or WhatsApp)</span></label>
+        <input id="inquiry-email" name="requester_email" type="email" maxlength="254" autocomplete="email">
+        <label for="inquiry-whatsapp">WhatsApp <span class="optional">(provide email or WhatsApp)</span></label>
+        <input id="inquiry-whatsapp" name="requester_whatsapp" type="tel" inputmode="tel" autocomplete="tel" placeholder="+233531234567">
+        <label for="inquiry-message">Message</label>
+        <textarea id="inquiry-message" name="message" rows="4" minlength="10" maxlength="1000" required placeholder="Tell us who you are and why you would like an introduction."></textarea>
+        <p class="field-help">NextUp reviews requests. An introduction is not guaranteed, and a player or guardian may decline.</p>
+        <div class="inquiry-actions">
+          <button class="button button-outline inquiry-cancel" id="inquiry-cancel" type="button">Cancel</button>
+          <button class="button button-primary" type="submit">Send request <span aria-hidden="true">↗</span></button>
+        </div>
+      </form>
+    </div>
+  </dialog>
   <dialog class="submission-dialog" id="submission-confirmation" aria-labelledby="confirmation-title" aria-describedby="confirmation-message">
     <div class="submission-dialog-content">
       <span class="confirmation-mark" aria-hidden="true">✓</span>

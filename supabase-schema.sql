@@ -15,6 +15,12 @@ alter table public.player_profiles
   add column if not exists highlight_video_url text,
   add column if not exists public_region text,
   add column if not exists guardian_consent boolean not null default false,
+  add column if not exists contact_name text not null default '',
+  add column if not exists contact_role text not null default 'player'
+    check (contact_role in ('player', 'parent_guardian', 'manager')),
+  add column if not exists contact_whatsapp text not null default ''
+    check (contact_whatsapp = '' or contact_whatsapp ~ '^\+[1-9][0-9]{7,14}$'),
+  add column if not exists contact_consent boolean not null default false,
   add column if not exists payment_status text not null default 'pending'
     check (payment_status in ('pending', 'verified', 'issue')),
   add column if not exists payment_reviewed_at timestamptz,
@@ -103,11 +109,11 @@ on public.player_profiles from public, anon, authenticated;
 revoke select on public.player_profiles from public, anon, authenticated;
 grant select on public.player_profiles to authenticated;
 revoke update on public.player_profiles from public, anon, authenticated;
-grant update (status, payment_status, payment_reviewed_at, payment_reviewed_by, profile_reviewed_at, profile_reviewed_by)
+grant update (status, payment_status, payment_reviewed_at, payment_reviewed_by, profile_reviewed_at, profile_reviewed_by, contact_name, contact_role, contact_whatsapp, contact_consent)
 on public.player_profiles to authenticated;
 revoke delete on public.player_profiles from public, anon, authenticated;
 grant delete on public.player_profiles to authenticated;
-grant insert (name, position, age, location, public_region, guardian_consent, club, payment_reference, profile_image_path, highlight_video_url, status)
+grant insert (name, position, age, location, public_region, guardian_consent, contact_name, contact_role, contact_whatsapp, contact_consent, club, payment_reference, profile_image_path, highlight_video_url, status)
 on public.player_profiles to anon, authenticated;
 
 drop policy if exists "Public can view player photos" on storage.objects;
@@ -115,6 +121,7 @@ drop policy if exists "Visitors can view approved player photos" on storage.obje
 drop view if exists public.approved_player_profiles;
 create view public.approved_player_profiles as
 select
+  id,
   name,
   position,
   case
@@ -137,6 +144,60 @@ where status = 'approved'
 revoke all on public.approved_player_profiles from public, anon, authenticated;
 grant select on public.approved_player_profiles to anon, authenticated;
 
+create table if not exists public.scouting_inquiries (
+  id uuid primary key default gen_random_uuid(),
+  player_profile_id uuid not null references public.player_profiles(id) on delete cascade,
+  requester_name text not null check (char_length(btrim(requester_name)) between 2 and 80),
+  requester_organization text not null check (char_length(btrim(requester_organization)) between 2 and 100),
+  requester_email text not null default ''
+    check (char_length(requester_email) <= 254)
+    check (requester_email = '' or requester_email ~* '^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$'),
+  requester_whatsapp text not null default ''
+    check (requester_whatsapp = '' or requester_whatsapp ~ '^\+[1-9][0-9]{7,14}$'),
+  message text not null check (char_length(btrim(message)) between 10 and 1000),
+  status text not null default 'new' check (status in ('new', 'player_contacted', 'introduced', 'closed')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check (btrim(requester_email) <> '' or btrim(requester_whatsapp) <> '')
+);
+
+alter table public.scouting_inquiries enable row level security;
+
+drop policy if exists "Admins can read scouting inquiries" on public.scouting_inquiries;
+create policy "Admins can read scouting inquiries"
+on public.scouting_inquiries
+for select
+to authenticated
+using (public.is_nextup_admin());
+
+drop policy if exists "Visitors can submit scouting inquiries" on public.scouting_inquiries;
+create policy "Visitors can submit scouting inquiries"
+on public.scouting_inquiries
+for insert
+to anon, authenticated
+with check (
+  status = 'new'
+  and exists (
+    select 1
+    from public.approved_player_profiles as approved_profile
+    where approved_profile.id = player_profile_id
+  )
+);
+
+drop policy if exists "Admins can update scouting inquiries" on public.scouting_inquiries;
+create policy "Admins can update scouting inquiries"
+on public.scouting_inquiries
+for update
+to authenticated
+using (public.is_nextup_admin())
+with check (public.is_nextup_admin());
+
+revoke all on public.scouting_inquiries from public, anon, authenticated;
+grant select on public.scouting_inquiries to authenticated;
+grant insert (player_profile_id, requester_name, requester_organization, requester_email, requester_whatsapp, message)
+on public.scouting_inquiries to anon, authenticated;
+grant update (status, updated_at) on public.scouting_inquiries to authenticated;
+
 drop policy if exists "Visitors can submit pending profiles" on public.player_profiles;
 create policy "Visitors can submit pending profiles"
 on public.player_profiles
@@ -147,7 +208,13 @@ with check (
   and payment_reference is not null
   and char_length(payment_reference) between 1 and 100
   and char_length(btrim(public_region)) between 2 and 80
-  and (age >= 18 or guardian_consent is true)
+  and char_length(btrim(contact_name)) between 2 and 80
+  and contact_whatsapp ~ '^\+[1-9][0-9]{7,14}$'
+  and contact_consent is true
+  and (
+    age >= 18
+    or (contact_role = 'parent_guardian' and guardian_consent is true)
+  )
 );
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)

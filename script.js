@@ -8,6 +8,14 @@ const form = document.querySelector("#profile-form");
 const toast = document.querySelector("#toast");
 const confirmationDialog = document.querySelector("#submission-confirmation");
 const confirmationPlayerName = document.querySelector("#confirmation-player-name");
+const inquiryDialog = document.querySelector("#inquiry-dialog");
+const inquiryForm = document.querySelector("#inquiry-form");
+const inquiryPlayerName = document.querySelector("#inquiry-player-name");
+const inquiryEmailInput = document.querySelector("#inquiry-email");
+const inquiryWhatsAppInput = document.querySelector("#inquiry-whatsapp");
+const contactWhatsAppInput = document.querySelector("#contact-whatsapp");
+const contactRoleSelect = document.querySelector("#contact-role");
+const guardianContactHelp = document.querySelector("#guardian-contact-help");
 const photoInput = document.querySelector("#player-photo");
 const photoPreview = document.querySelector("#photo-preview");
 const photoPreviewImage = document.querySelector("#photo-preview-image");
@@ -17,6 +25,7 @@ const guardianConsentField = document.querySelector("#guardian-consent-field");
 const guardianConsentInput = document.querySelector("#guardian-consent");
 let toastTimer;
 let photoPreviewUrl;
+let selectedInquiryPlayer;
 
 const PHOTO_BUCKET = "player-images";
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
@@ -31,7 +40,7 @@ async function getSupabasePlayers() {
 
   const { data, error } = await nextupClient
     .from("approved_player_profiles")
-    .select("name, position, age_range, region, club, profile_image_path, highlight_video_url, created_at")
+    .select("id, name, position, age_range, region, club, profile_image_path, highlight_video_url, created_at")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -92,6 +101,13 @@ function makeCard(player, index) {
     }, { once: true });
     photo.src = imageUrl;
   }
+  const introductionButton = document.createElement("button");
+  introductionButton.className = "introduction-button";
+  introductionButton.type = "button";
+  introductionButton.textContent = "Request an introduction";
+  introductionButton.setAttribute("aria-label", `Request an introduction to ${player.name}`);
+  introductionButton.addEventListener("click", () => openInquiryDialog(player));
+  card.append(introductionButton);
   return card;
 }
 
@@ -165,6 +181,21 @@ function showToast(message) {
   toastTimer = window.setTimeout(() => toast.classList.remove("visible"), 4000);
 }
 
+function normalizeWhatsAppNumber(value) {
+  const normalized = value.trim().replace(/[()\s.-]/g, "");
+  return /^\+[1-9]\d{7,14}$/.test(normalized) ? normalized : "";
+}
+
+function openInquiryDialog(player) {
+  selectedInquiryPlayer = player;
+  inquiryForm.reset();
+  inquiryEmailInput.setCustomValidity("");
+  inquiryWhatsAppInput.setCustomValidity("");
+  inquiryPlayerName.textContent = player.name;
+  if (typeof inquiryDialog.showModal === "function") inquiryDialog.showModal();
+  else showToast("Please contact NextUp on WhatsApp to request an introduction.");
+}
+
 searchInput.addEventListener("input", renderPlayers);
 positionFilter.addEventListener("change", renderPlayers);
 
@@ -173,6 +204,13 @@ function updateGuardianConsentRequirement() {
   const guardianRequired = age >= 13 && age < 18;
   guardianConsentField.hidden = !guardianRequired;
   guardianConsentInput.required = guardianRequired;
+  if (guardianRequired) {
+    contactRoleSelect.value = "parent_guardian";
+    contactRoleSelect.disabled = true;
+  } else {
+    contactRoleSelect.disabled = false;
+  }
+  guardianContactHelp.hidden = !guardianRequired;
   if (!guardianRequired) guardianConsentInput.checked = false;
 }
 
@@ -203,6 +241,13 @@ form.addEventListener("submit", async (event) => {
 
   const data = new FormData(form);
   const playerName = data.get("name").trim();
+  const contactWhatsApp = normalizeWhatsAppNumber(data.get("contact_whatsapp"));
+  if (!contactWhatsApp) {
+    contactWhatsAppInput.setCustomValidity("Enter a WhatsApp number with its +country code.");
+    contactWhatsAppInput.reportValidity();
+    contactWhatsAppInput.setCustomValidity("");
+    return;
+  }
   const videoUrl = data.get("video_url").trim();
   const highlightVideoUrl = videoUrl ? normalizeHighlightUrl(videoUrl) : "";
   if (videoUrl && !highlightVideoUrl) {
@@ -242,6 +287,10 @@ form.addEventListener("submit", async (event) => {
       location: data.get("public_region").trim(),
       public_region: data.get("public_region").trim(),
       guardian_consent: data.get("guardian_consent") === "on",
+      contact_name: data.get("contact_name").trim(),
+      contact_role: contactRoleSelect.value,
+      contact_whatsapp: contactWhatsApp,
+      contact_consent: data.get("contact_consent") === "on",
       club: data.get("club").trim(),
       payment_reference: data.get("payment_reference").trim(),
       profile_image_path: photoPath,
@@ -277,6 +326,58 @@ form.addEventListener("submit", async (event) => {
   confirmationPlayerName.textContent = playerName.split(/\s+/)[0];
   if (typeof confirmationDialog.showModal === "function") confirmationDialog.showModal();
   else showToast("Your registration was received for manual profile and payment review.");
+});
+
+contactWhatsAppInput.addEventListener("input", () => contactWhatsAppInput.setCustomValidity(""));
+inquiryEmailInput.addEventListener("input", () => inquiryEmailInput.setCustomValidity(""));
+inquiryWhatsAppInput.addEventListener("input", () => inquiryWhatsAppInput.setCustomValidity(""));
+document.querySelector("#inquiry-cancel").addEventListener("click", () => inquiryDialog.close());
+
+inquiryForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!inquiryForm.reportValidity()) return;
+  if (!selectedInquiryPlayer || !nextupClient) {
+    showToast("The introduction request service is unavailable. Please try again later.");
+    return;
+  }
+
+  const data = new FormData(inquiryForm);
+  const email = data.get("requester_email").trim();
+  const rawWhatsApp = data.get("requester_whatsapp").trim();
+  const whatsapp = rawWhatsApp ? normalizeWhatsAppNumber(rawWhatsApp) : "";
+  inquiryWhatsAppInput.setCustomValidity(
+    rawWhatsApp && !whatsapp ? "Enter a WhatsApp number with its +country code." : ""
+  );
+  inquiryEmailInput.setCustomValidity(
+    !email && !rawWhatsApp ? "Provide at least an email address or WhatsApp number." : ""
+  );
+  if (!inquiryForm.reportValidity()) return;
+
+  const submitButton = inquiryForm.querySelector('button[type="submit"]');
+  submitButton.disabled = true;
+  submitButton.textContent = "Sending...";
+  try {
+    const { error } = await nextupClient.from("scouting_inquiries").insert({
+      player_profile_id: selectedInquiryPlayer.id,
+      requester_name: data.get("requester_name").trim(),
+      requester_organization: data.get("requester_organization").trim(),
+      requester_email: email,
+      requester_whatsapp: whatsapp,
+      message: data.get("message").trim()
+    });
+    if (error) throw error;
+
+    inquiryDialog.close();
+    inquiryForm.reset();
+    selectedInquiryPlayer = undefined;
+    showToast("Your request was sent to NextUp for review. The player or guardian can choose whether to connect.");
+  } catch (error) {
+    console.error("Could not submit the scouting introduction request.", error);
+    showToast(`Your request could not be sent: ${error.message || "please try again."}`);
+  } finally {
+    submitButton.disabled = false;
+    submitButton.innerHTML = 'Send request <span aria-hidden="true">↗</span>';
+  }
 });
 
 async function loadPlayers() {
