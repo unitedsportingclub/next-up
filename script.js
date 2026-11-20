@@ -38,13 +38,25 @@ async function getSupabasePlayers() {
     return [];
   }
 
+  const photoPaths = data.map((player) => player.profile_image_path).filter(Boolean);
+  let signedPhotos = [];
+  if (photoPaths.length) {
+    const { data: signedPhotoData, error: photoError } = await nextupClient.storage
+      .from(PHOTO_BUCKET)
+      .createSignedUrls(photoPaths, 3600);
+    if (photoError) {
+      console.error("Could not load approved player photos.", photoError);
+      showToast("Player photos could not be loaded.");
+    } else {
+      signedPhotos = signedPhotoData || [];
+    }
+  }
+  const photoUrls = new Map(signedPhotos.map((photo) => [photo.path, photo.signedUrl]));
+
   return data.map((player) => {
-    const imageUrl = player.profile_image_path
-      ? nextupClient.storage.from(PHOTO_BUCKET).getPublicUrl(player.profile_image_path).data.publicUrl
-      : "";
     return {
       ...player,
-      imageUrl,
+      imageUrl: photoUrls.get(player.profile_image_path) || "",
       initials: initialsFor(player.name)
     };
   });
@@ -197,6 +209,7 @@ form.addEventListener("submit", async (event) => {
 
   const photo = photoInput.files[0];
   let photoPath = null;
+  let photoUploaded = false;
   try {
     if (photo) {
       const extension = photo.type === "image/jpeg" ? "jpg" : photo.type.split("/")[1];
@@ -205,6 +218,7 @@ form.addEventListener("submit", async (event) => {
         .from(PHOTO_BUCKET)
         .upload(photoPath, photo, { contentType: photo.type, upsert: false });
       if (uploadError) throw uploadError;
+      photoUploaded = true;
     }
 
     const { error } = await nextupClient.from("player_profiles").insert({
@@ -220,6 +234,16 @@ form.addEventListener("submit", async (event) => {
     });
     if (error) throw error;
   } catch (error) {
+    if (photoUploaded) {
+      try {
+        const { error: cleanupError } = await nextupClient.storage
+          .from(PHOTO_BUCKET)
+          .remove([photoPath]);
+        if (cleanupError) throw cleanupError;
+      } catch (cleanupError) {
+        console.error("Could not remove the photo after profile submission failed.", cleanupError);
+      }
+    }
     console.error("Could not submit your NextUp profile.", error);
     showToast(`Your profile could not be submitted: ${error.message || "please try again."}`);
     return;

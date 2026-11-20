@@ -102,7 +102,7 @@ insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
 values (
   'player-images',
   'player-images',
-  true,
+  false,
   5242880,
   array['image/jpeg', 'image/png', 'image/webp']
 )
@@ -112,11 +112,31 @@ set public = excluded.public,
     allowed_mime_types = excluded.allowed_mime_types;
 
 drop policy if exists "Public can view player photos" on storage.objects;
-create policy "Public can view player photos"
+drop policy if exists "Visitors can view approved player photos" on storage.objects;
+create policy "Visitors can view approved player photos"
 on storage.objects
 for select
 to anon, authenticated
-using (bucket_id = 'player-images');
+using (
+  bucket_id = 'player-images'
+  and (storage.foldername(name))[1] = 'profiles'
+  and exists (
+    select 1
+    from public.approved_player_profiles as approved_profile
+    where approved_profile.profile_image_path = storage.objects.name
+  )
+);
+
+drop policy if exists "Admins can review player photos" on storage.objects;
+create policy "Admins can review player photos"
+on storage.objects
+for select
+to authenticated
+using (
+  bucket_id = 'player-images'
+  and (storage.foldername(name))[1] = 'profiles'
+  and public.is_nextup_admin()
+);
 
 drop policy if exists "Visitors can upload player photos" on storage.objects;
 create policy "Visitors can upload player photos"
@@ -127,5 +147,35 @@ with check (
   bucket_id = 'player-images'
   and (storage.foldername(name))[1] = 'profiles'
   and storage.filename(name) ~ '^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(jpg|png|webp)$'
+);
+
+create or replace function public.is_unattached_player_photo(object_path text)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select object_path ~ '^profiles/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(jpg|png|webp)$'
+    and not exists (
+      select 1
+      from public.player_profiles
+      where profile_image_path = object_path
+    );
+$$;
+
+revoke all on function public.is_unattached_player_photo(text) from public;
+grant execute on function public.is_unattached_player_photo(text) to anon, authenticated;
+
+drop policy if exists "Visitors can remove unattached player photos" on storage.objects;
+create policy "Visitors can remove unattached player photos"
+on storage.objects
+for delete
+to anon, authenticated
+using (
+  bucket_id = 'player-images'
+  and (storage.foldername(name))[1] = 'profiles'
+  and storage.filename(name) ~ '^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.(jpg|png|webp)$'
+  and public.is_unattached_player_photo(storage.objects.name)
 );
 

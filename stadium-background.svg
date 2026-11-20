@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 1100" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="night" x2="0" y2="1">
+      <stop stop-color="#17251c"/>
+      <stop offset=".58" stop-color="#101a13"/>
+      <stop offset="1" stop-color="#09120c"/>
+    </linearGradient>
+    <linearGradient id="field" x2="0" y2="1">
+      <stop stop-color="#314d35"/>
+      <stop offset="1" stop-color="#172b1c"/>
+    </linearGradient>
+    <linearGradient id="beam" x2="0" y2="1">
+      <stop stop-color="#e7ffd1" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#c7f36b" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="glow">
+      <stop stop-color="#e5ffd1" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#c7f36b" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="crowd" width="38" height="28" patternUnits="userSpaceOnUse">
+      <circle cx="7" cy="8" r="2" fill="#c7f36b" fill-opacity=".52"/>
+      <circle cx="24" cy="17" r="2" fill="#e1e9d8" fill-opacity=".46"/>
+      <circle cx="35" cy="5" r="1.5" fill="#91ae7d" fill-opacity=".58"/>
+    </pattern>
+  </defs>
+  <rect width="1800" height="1100" fill="url(#night)"/>
+  <ellipse cx="200" cy="220" rx="480" ry="260" fill="url(#glow)"/>
+  <ellipse cx="1600" cy="220" rx="480" ry="260" fill="url(#glow)"/>
+  <path d="M170 125 670 670H0V270Z" fill="url(#beam)" opacity=".34"/>
+  <path d="M1630 125 1130 670h670V270Z" fill="url(#beam)" opacity=".3"/>
+  <path d="M0 300Q900 170 1800 300v330Q900 440 0 630Z" fill="#1b2b20"/>
+  <path d="M0 300Q900 170 1800 300v330Q900 440 0 630Z" fill="url(#crowd)" opacity=".74"/>
+  <path d="M0 430Q900 300 1800 430" fill="none" stroke="#71836c" stroke-opacity=".28" stroke-width="8"/>
+  <path d="M0 518Q900 388 1800 518" fill="none" stroke="#0a120d" stroke-opacity=".62" stroke-width="24"/>
+  <path d="M0 556Q900 424 1800 556" fill="none" stroke="#71836c" stroke-opacity=".22" stroke-width="5"/>
+  <path d="M0 610 1800 610 1800 1100H0Z" fill="url(#field)"/>
+  <path d="M0 710Q900 800 1800 710v128Q900 915 0 838Z" fill="#c7f36b" fill-opacity=".035"/>
+  <path d="M0 890Q900 982 1800 890v128Q900 1080 0 1018Z" fill="#09140c" fill-opacity=".22"/>
+  <g fill="none" stroke="#d4e4cc" stroke-opacity=".23" stroke-width="3">
+    <path d="M105 1100 390 610h1020l285 490"/>
+    <path d="M900 610v490"/>
+    <ellipse cx="900" cy="610" rx="165" ry="72"/>
+    <path d="M580 610v145q320 78 640 0V610"/>
+    <path d="M735 610v55q165 40 330 0v-55"/>
+  </g>
+  <g fill="#f3ffe8">
+    <circle cx="176" cy="142" r="13"/>
+    <circle cx="220" cy="153" r="8"/>
+    <circle cx="1624" cy="142" r="13"/>
+    <circle cx="1580" cy="153" r="8"/>
+  </g>
+</svg>

@@ -63,10 +63,10 @@ function makePlayerCard(player) {
   const avatar = document.createElement("div");
   avatar.className = "admin-player-avatar";
 
-  if (player.profile_image_path) {
+  if (player.imageUrl) {
     const image = document.createElement("img");
     image.alt = "";
-    image.src = nextupClient.storage.from(photoBucket).getPublicUrl(player.profile_image_path).data.publicUrl;
+    image.src = player.imageUrl;
     image.addEventListener("error", () => {
       avatar.textContent = initialsFor(player.name);
     }, { once: true });
@@ -92,14 +92,14 @@ function makePlayerCard(player) {
   card.append(heading, details);
 
   const videoUrl = normalizeVideoUrl(player.highlight_video_url);
-  if (player.profile_image_path || videoUrl) {
+  if (player.imageUrl || videoUrl) {
     const media = document.createElement("div");
     media.className = "admin-player-media";
-    if (player.profile_image_path) {
+    if (player.imageUrl) {
       const image = document.createElement("img");
       image.alt = `Profile photo for ${player.name}`;
       image.loading = "lazy";
-      image.src = nextupClient.storage.from(photoBucket).getPublicUrl(player.profile_image_path).data.publicUrl;
+      image.src = player.imageUrl;
       media.append(image);
     }
     if (videoUrl) {
@@ -154,8 +154,32 @@ async function loadPendingPlayers() {
       return;
     }
 
-    queue.replaceChildren(...data.map(makePlayerCard));
-    showMessage(`${data.length} registration${data.length === 1 ? "" : "s"} awaiting review.`);
+    const photoPaths = [...new Set(data.map((player) => player.profile_image_path).filter(Boolean))];
+    let photoUrls = new Map();
+    let photoLoadError = false;
+    if (photoPaths.length) {
+      const { data: signedPhotos, error: photoError } = await nextupClient.storage
+        .from(photoBucket)
+        .createSignedUrls(photoPaths, 900);
+      if (photoError) {
+        photoLoadError = true;
+        console.error("Could not load photos for pending registrations.", photoError);
+      } else {
+        photoUrls = new Map((signedPhotos || [])
+          .filter((photo) => photo.signedUrl)
+          .map((photo) => [photo.path, photo.signedUrl]));
+        photoLoadError = photoUrls.size < photoPaths.length;
+      }
+    }
+
+    queue.replaceChildren(...data.map((player) => makePlayerCard({
+      ...player,
+      imageUrl: photoUrls.get(player.profile_image_path) || ""
+    })));
+    const registrationMessage = `${data.length} registration${data.length === 1 ? "" : "s"} awaiting review.`;
+    showMessage(photoLoadError
+      ? `${registrationMessage} Some profile photos could not be loaded.`
+      : registrationMessage, photoLoadError ? "error" : undefined);
   } catch (error) {
     console.error("Could not load pending registrations.", error);
     showMessage(`Could not load registrations: ${error.message || "check your admin access and Supabase setup."}`, "error");
