@@ -1,12 +1,3 @@
-const starterPlayers = [
-  { name: "Jayden Mensah", position: "Forward", age: 18, location: "Brixton, London", club: "Southside United", initials: "JM" },
-  { name: "Amara Khan", position: "Midfielder", age: 17, location: "Birmingham", club: "Aston Community FC", initials: "AK" },
-  { name: "Tobi Okafor", position: "Defender", age: 19, location: "Manchester", club: "Moss Side Athletic", initials: "TO" },
-  { name: "Luca Bennett", position: "Goalkeeper", age: 16, location: "Bristol", club: "Easton Town", initials: "LB" },
-  { name: "Nia Williams", position: "Forward", age: 18, location: "Leeds", club: "Kirkstall Rovers", initials: "NW" },
-  { name: "Ethan Clarke", position: "Midfielder", age: 20, location: "Nottingham", club: "Forest Fields FC", initials: "EC" }
-];
-
 const nextupClient = window.nextupSupabase;
 const grid = document.querySelector("#player-grid");
 const searchInput = document.querySelector("#player-search");
@@ -27,9 +18,13 @@ let photoPreviewUrl;
 const PHOTO_BUCKET = "player-images";
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 const allowedPhotoTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+let playerLoadState = "loading";
 
 async function getSupabasePlayers() {
-  if (!nextupClient) return [];
+  if (!nextupClient) {
+    playerLoadState = "error";
+    return [];
+  }
 
   const { data, error } = await nextupClient
     .from("approved_player_profiles")
@@ -37,6 +32,7 @@ async function getSupabasePlayers() {
     .order("created_at", { ascending: false });
 
   if (error) {
+    playerLoadState = "error";
     console.error("Could not load approved NextUp profiles.", error);
     showToast("Profiles could not be loaded from the server.");
     return [];
@@ -52,10 +48,6 @@ async function getSupabasePlayers() {
       initials: initialsFor(player.name)
     };
   });
-}
-
-function getPlayers() {
-  return starterPlayers;
 }
 
 function initialsFor(name) {
@@ -119,17 +111,36 @@ function escapeHTML(value) {
 
 let renderedServerPlayers = [];
 
-async function renderPlayers() {
+function renderPlayers() {
+  const playerCount = document.querySelector("#player-count");
+  if (playerLoadState === "loading") {
+    grid.replaceChildren();
+    resultsCount.textContent = "Loading…";
+    emptyState.hidden = true;
+    playerCount.textContent = "—";
+    return;
+  }
+
   const query = searchInput.value.trim().toLowerCase();
   const position = positionFilter.value;
-  const matches = [...renderedServerPlayers, ...getPlayers()].filter((player) => {
+  const matches = renderedServerPlayers.filter((player) => {
     const matchesQuery = `${player.name} ${player.location} ${player.club || ""}`.toLowerCase().includes(query);
     return matchesQuery && (position === "all" || player.position === position);
   });
   grid.replaceChildren(...matches.map(makeCard));
   resultsCount.textContent = `${matches.length} ${matches.length === 1 ? "player" : "players"}`;
   emptyState.hidden = matches.length > 0;
-  document.querySelector("#player-count").textContent = `${(1240 + renderedServerPlayers.length).toLocaleString()}+`;
+  playerCount.textContent = renderedServerPlayers.length.toLocaleString();
+
+  if (!matches.length) {
+    if (playerLoadState === "error") {
+      emptyState.textContent = "Player profiles are temporarily unavailable. Please try again later.";
+    } else if (!renderedServerPlayers.length) {
+      emptyState.textContent = "No approved players yet. Be the first to create a profile.";
+    } else {
+      emptyState.textContent = "No players match your search or position. Try another search or filter.";
+    }
+  }
 }
 
 function showToast(message) {
@@ -228,8 +239,17 @@ form.addEventListener("submit", async (event) => {
 });
 
 async function loadPlayers() {
-  renderedServerPlayers = await getSupabasePlayers();
-  await renderPlayers();
+  try {
+    renderedServerPlayers = await getSupabasePlayers();
+    if (playerLoadState === "loading") playerLoadState = "loaded";
+  } catch (error) {
+    playerLoadState = "error";
+    console.error("Could not load approved NextUp profiles.", error);
+  }
+
+  grid.setAttribute("aria-busy", "false");
+  renderPlayers();
 }
 
+renderPlayers();
 loadPlayers();

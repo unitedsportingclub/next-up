@@ -38,13 +38,8 @@
           <a class="text-link" href="#players">Explore players <span aria-hidden="true">↓</span></a>
         </div>
         <div class="hero-proof">
-          <div class="avatar-stack" aria-hidden="true">
-            <span class="mini-avatar avatar-one">JM</span>
-            <span class="mini-avatar avatar-two">AK</span>
-            <span class="mini-avatar avatar-three">TO</span>
-            <span class="avatar-more">+</span>
-          </div>
-          <p><strong id="player-count">1,240+</strong><br>players on the pitch</p>
+          <span class="hero-proof-mark" aria-hidden="true">N</span>
+          <p><strong id="player-count">—</strong><br>approved player profiles</p>
         </div>
       </div>
       <div class="hero-visual" aria-label="Illustration of a football pitch">
@@ -57,14 +52,14 @@
           <div class="pitch-goal pitch-goal-right"></div>
           <div class="pitch-ball">⚽</div>
           <div class="spotlight-card">
-            <div class="spotlight-top"><span class="spotlight-label">PLAYER TO WATCH</span><span class="verified" aria-label="Verified profile">✓</span></div>
+            <div class="spotlight-top"><span class="spotlight-label">PROFILE PREVIEW</span></div>
             <div class="spotlight-player">
-              <div class="spotlight-avatar">17</div>
-              <div><strong>Jayden Mensah</strong><span>Winger · London, UK</span></div>
+              <div class="spotlight-avatar">N</div>
+              <div><strong>Your profile</strong><span>Your position · your location</span></div>
             </div>
-            <div class="spotlight-stats"><span><strong>18</strong> years</span><span><strong>24</strong> goals this season</span></div>
+            <div class="spotlight-stats"><span><strong>Your story</strong></span><span><strong>Your highlights</strong></span></div>
           </div>
-          <div class="floating-tag"><span>↗</span> SCOUTS ARE WATCHING</div>
+          <div class="floating-tag"><span>↗</span> YOUR NEXT STEP STARTS HERE</div>
         </div>
         <span class="visual-caption">NO AGENT? NO PROBLEM.</span>
       </div>
@@ -89,7 +84,7 @@
         <label class="search-box">
           <span class="search-icon" aria-hidden="true">⌕</span>
           <span class="visually-hidden">Search players</span>
-          <input id="player-search" type="search" placeholder="Search name or location" autocomplete="off">
+          <input id="player-search" type="search" placeholder="Search name, location or club" autocomplete="off">
         </label>
         <label class="filter-label" for="position-filter">POSITION</label>
         <select id="position-filter" aria-label="Filter by position">
@@ -101,7 +96,7 @@
         </select>
         <span class="player-total" id="results-count" aria-live="polite"></span>
       </div>
-      <div class="player-grid" id="player-grid" aria-live="polite"></div>
+      <div class="player-grid" id="player-grid" aria-live="polite" aria-busy="true"></div>
       <p class="empty-state" id="empty-state" hidden>No players found. Try another search or position.</p>
       <div class="directory-footer"><span>EVERY PLAYER HAS A STORY.</span><a href="#create-profile">MAKE YOURS COUNT <span aria-hidden="true">↗</span></a></div>
     </section>
