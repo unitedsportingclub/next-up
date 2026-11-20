@@ -14,7 +14,25 @@ alter table public.player_profiles
   add column if not exists profile_image_path text,
   add column if not exists highlight_video_url text,
   add column if not exists public_region text,
-  add column if not exists guardian_consent boolean not null default false;
+  add column if not exists guardian_consent boolean not null default false,
+  add column if not exists payment_status text not null default 'pending'
+    check (payment_status in ('pending', 'verified', 'issue')),
+  add column if not exists payment_reviewed_at timestamptz,
+  add column if not exists payment_reviewed_by uuid references auth.users(id) on delete set null,
+  add column if not exists profile_reviewed_at timestamptz,
+  add column if not exists profile_reviewed_by uuid references auth.users(id) on delete set null;
+
+update public.player_profiles
+set payment_status = 'verified',
+    payment_reviewed_at = coalesce(payment_reviewed_at, created_at)
+where status = 'approved'
+  and payment_status = 'pending'
+  and payment_reviewed_at is null;
+
+update public.player_profiles
+set profile_reviewed_at = created_at
+where status in ('approved', 'rejected')
+  and profile_reviewed_at is null;
 
 create table if not exists public.nextup_admins (
   user_id uuid primary key references auth.users(id) on delete cascade,
@@ -65,12 +83,13 @@ to authenticated
 using (public.is_nextup_admin());
 
 drop policy if exists "Admins can review pending profiles" on public.player_profiles;
-create policy "Admins can review pending profiles"
+drop policy if exists "Admins can manage profile and payment review" on public.player_profiles;
+create policy "Admins can manage profile and payment review"
 on public.player_profiles
 for update
 to authenticated
-using (public.is_nextup_admin() and status = 'pending')
-with check (public.is_nextup_admin() and status in ('approved', 'rejected'));
+using (public.is_nextup_admin())
+with check (public.is_nextup_admin());
 
 drop policy if exists "Admins can delete player profiles" on public.player_profiles;
 create policy "Admins can delete player profiles"
@@ -84,7 +103,8 @@ on public.player_profiles from public, anon, authenticated;
 revoke select on public.player_profiles from public, anon, authenticated;
 grant select on public.player_profiles to authenticated;
 revoke update on public.player_profiles from public, anon, authenticated;
-grant update (status) on public.player_profiles to authenticated;
+grant update (status, payment_status, payment_reviewed_at, payment_reviewed_by, profile_reviewed_at, profile_reviewed_by)
+on public.player_profiles to authenticated;
 revoke delete on public.player_profiles from public, anon, authenticated;
 grant delete on public.player_profiles to authenticated;
 grant insert (name, position, age, location, public_region, guardian_consent, club, payment_reference, profile_image_path, highlight_video_url, status)
@@ -111,7 +131,8 @@ select
   highlight_video_url,
   created_at
 from public.player_profiles
-where status = 'approved';
+where status = 'approved'
+  and payment_status = 'verified';
 
 revoke all on public.approved_player_profiles from public, anon, authenticated;
 grant select on public.approved_player_profiles to anon, authenticated;

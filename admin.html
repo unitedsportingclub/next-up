@@ -28,8 +28,8 @@
   <main class="admin-main">
     <div class="admin-page-heading">
       <p class="eyebrow">NEXTUP MANAGEMENT</p>
-      <h1>Player approvals</h1>
-      <p>Verify each payment before approving a player profile.</p>
+      <h1>Payment &amp; profile review</h1>
+      <p>Review payment and player details separately. A profile is public only after payment is verified and the profile is approved.</p>
     </div>
 
     <p class="admin-message" id="admin-message" role="status" aria-live="polite"></p>
@@ -53,12 +53,12 @@
           <h2>Player profiles</h2>
         </div>
         <div class="admin-toolbar">
-          <label class="visually-hidden" for="admin-status-filter">Filter profiles by status</label>
+          <label class="visually-hidden" for="admin-status-filter">Filter profiles</label>
           <select class="admin-status-filter" id="admin-status-filter">
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-            <option value="all">All statuses</option>
+            <option value="attention">Needs attention</option>
+            <option value="published">Published</option>
+            <option value="rejected">Rejected profiles</option>
+            <option value="all">All profiles</option>
           </select>
           <button class="button button-outline admin-refresh" id="admin-refresh" type="button">Refresh profiles</button>
           <button class="button button-outline admin-signout" id="admin-signout" type="button">Sign out</button>
@@ -69,7 +69,7 @@
   </main>
 
   <footer class="admin-footer" id="page-bottom">
-    <span>Private admin area · Only approve payments you have verified.</span>
+    <span>Private admin area · Only mark a payment verified after confirming it.</span>
     <a href="index.html">NEXTUP FOOTBALL</a>
   </footer>
   <nav class="scroll-controls" aria-label="Page shortcuts">

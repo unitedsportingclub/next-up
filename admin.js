@@ -10,6 +10,7 @@ const statusFilter = document.querySelector("#admin-status-filter");
 const photoBucket = "player-images";
 let queueRefreshTimer;
 let queueLoading = false;
+let adminUserId;
 
 function showMessage(text, tone) {
   message.textContent = text;
@@ -55,6 +56,16 @@ function addDetail(container, label, value) {
   container.append(detail);
 }
 
+function formatStatus(value) {
+  return value.replace(/_/g, " ");
+}
+
+function formatReviewDate(value, reviewerId) {
+  if (!value) return "Not reviewed";
+  const reviewer = reviewerId ? ` · Admin ${reviewerId.slice(0, 8)}` : "";
+  return `${new Date(value).toLocaleString()}${reviewer}`;
+}
+
 function makePlayerCard(player) {
   const card = document.createElement("article");
   card.className = "admin-player";
@@ -80,16 +91,22 @@ function makePlayerCard(player) {
   const name = document.createElement("h3");
   name.textContent = player.name;
   const subtitle = document.createElement("p");
-  subtitle.textContent = `${player.position} · Age ${player.age} · ${player.location}`;
+  subtitle.textContent = `${player.position} · Age ${player.age} · ${player.public_region || player.location}`;
   nameBlock.append(name, subtitle);
   heading.append(avatar, nameBlock);
 
   const details = document.createElement("div");
   details.className = "admin-player-details";
-  addDetail(details, "Status", player.status);
+  addDetail(details, "Profile review", formatStatus(player.status));
+  addDetail(details, "Payment review", formatStatus(player.payment_status));
+  addDetail(details, "Public listing", player.status === "approved" && player.payment_status === "verified"
+    ? "Published"
+    : "Hidden until both approvals");
   addDetail(details, "Club", player.club);
   addDetail(details, "Payment reference", player.payment_reference);
   addDetail(details, "Submitted", new Date(player.created_at).toLocaleString());
+  addDetail(details, "Payment decision recorded", formatReviewDate(player.payment_reviewed_at, player.payment_reviewed_by));
+  addDetail(details, "Profile decision recorded", formatReviewDate(player.profile_reviewed_at, player.profile_reviewed_by));
 
   card.append(heading, details);
 
@@ -118,19 +135,54 @@ function makePlayerCard(player) {
 
   const actions = document.createElement("div");
   actions.className = "admin-player-actions";
-  if (player.status === "pending") {
-    const reject = document.createElement("button");
-    reject.className = "button admin-reject";
-    reject.type = "button";
-    reject.textContent = "Reject";
-    reject.addEventListener("click", () => updateStatus(player.id, "rejected", actions));
+  const paymentActions = document.createElement("div");
+  paymentActions.className = "admin-review-group";
+  const paymentLabel = document.createElement("span");
+  paymentLabel.className = "admin-review-label";
+  paymentLabel.textContent = "PAYMENT";
+  paymentActions.append(paymentLabel);
+  if (player.payment_status !== "verified") {
+    const verifyPayment = document.createElement("button");
+    verifyPayment.className = "button button-primary";
+    verifyPayment.type = "button";
+    verifyPayment.textContent = "Verify payment";
+    verifyPayment.addEventListener("click", () => updateReview(player, "payment_status", "verified", actions));
+    paymentActions.append(verifyPayment);
+  }
+
+  if (player.payment_status !== "issue") {
+    const flagPayment = document.createElement("button");
+    flagPayment.className = "button admin-reject";
+    flagPayment.type = "button";
+    flagPayment.textContent = "Flag payment issue";
+    flagPayment.addEventListener("click", () => updateReview(player, "payment_status", "issue", actions));
+    paymentActions.append(flagPayment);
+  }
+
+  const profileActions = document.createElement("div");
+  profileActions.className = "admin-review-group";
+  const profileLabel = document.createElement("span");
+  profileLabel.className = "admin-review-label";
+  profileLabel.textContent = "PROFILE";
+  profileActions.append(profileLabel);
+  if (player.status !== "approved") {
     const approve = document.createElement("button");
     approve.className = "button button-primary";
     approve.type = "button";
-    approve.textContent = "Approve player";
-    approve.addEventListener("click", () => updateStatus(player.id, "approved", actions));
-    actions.append(reject, approve);
+    approve.textContent = "Approve profile";
+    approve.addEventListener("click", () => updateReview(player, "status", "approved", actions));
+    profileActions.append(approve);
   }
+
+  if (player.status !== "rejected") {
+    const reject = document.createElement("button");
+    reject.className = "button admin-reject";
+    reject.type = "button";
+    reject.textContent = "Reject profile";
+    reject.addEventListener("click", () => updateReview(player, "status", "rejected", actions));
+    profileActions.append(reject);
+  }
+  actions.append(paymentActions, profileActions);
 
   const deleteButton = document.createElement("button");
   deleteButton.className = "button admin-delete";
@@ -146,22 +198,29 @@ async function loadProfiles() {
   if (queueLoading) return false;
   queueLoading = true;
   statusFilter.disabled = true;
-  const status = statusFilter.value;
+  const filter = statusFilter.value;
+  const filterLabel = statusFilter.selectedOptions[0].textContent.toLowerCase();
   queue.replaceChildren();
-  showMessage(status === "all" ? "Loading all profiles..." : `Loading ${status} profiles...`);
+  showMessage(filter === "all" ? "Loading all profiles..." : `Loading ${filterLabel}...`);
 
   try {
     let profilesQuery = nextupClient
       .from("player_profiles")
-      .select("id, name, position, age, location, club, payment_reference, status, created_at, profile_image_path, highlight_video_url");
-    if (status !== "all") profilesQuery = profilesQuery.eq("status", status);
-    const { data, error } = await profilesQuery.order("created_at", { ascending: status === "pending" });
+      .select("id, name, position, age, location, public_region, club, payment_reference, status, payment_status, payment_reviewed_at, payment_reviewed_by, profile_reviewed_at, profile_reviewed_by, created_at, profile_image_path, highlight_video_url");
+    if (filter === "attention") {
+      profilesQuery = profilesQuery.or("status.eq.pending,payment_status.neq.verified");
+    } else if (filter === "published") {
+      profilesQuery = profilesQuery.eq("status", "approved").eq("payment_status", "verified");
+    } else if (filter === "rejected") {
+      profilesQuery = profilesQuery.eq("status", "rejected");
+    }
+    const { data, error } = await profilesQuery.order("created_at", { ascending: filter === "attention" });
     if (error) throw error;
 
     if (!data.length) {
       const empty = document.createElement("p");
       empty.className = "admin-empty";
-      empty.textContent = status === "all" ? "No player profiles found." : `No ${status} profiles found.`;
+      empty.textContent = filter === "all" ? "No player profiles found." : `No profiles in ${filterLabel}.`;
       queue.append(empty);
       showMessage(empty.textContent);
       return true;
@@ -190,9 +249,9 @@ async function loadProfiles() {
       imageUrl: photoUrls.get(player.profile_image_path) || ""
     })));
     const profileCount = `${data.length} ${data.length === 1 ? "profile" : "profiles"}`;
-    const profileMessage = status === "pending"
-      ? `${profileCount} awaiting review.`
-      : `${profileCount} ${status === "all" ? "across all statuses." : `with ${status} status.`}`;
+    const profileMessage = filter === "attention"
+      ? `${profileCount} need attention.`
+      : `${profileCount} ${filter === "all" ? "across all review states." : `in ${filterLabel}.`}`;
     showMessage(photoLoadError
       ? `${profileMessage} Some profile photos could not be loaded.`
       : profileMessage, photoLoadError ? "error" : undefined);
@@ -259,33 +318,52 @@ async function deletePlayerProfile(player, actions) {
   }
 }
 
-async function updateStatus(playerId, status, actions) {
+async function updateReview(player, field, value, actions) {
+  const isPaymentReview = field === "payment_status";
+  const label = isPaymentReview ? "payment" : "profile";
+  const isRemovingFromPublic = (player.status === "approved" && value === "rejected")
+    || (player.payment_status === "verified" && value === "issue");
+  if (isRemovingFromPublic && !window.confirm(
+    `This will remove ${player.name}'s profile from the public board until both reviews are approved. Continue?`
+  )) return;
+
   const buttons = actions.querySelectorAll("button");
   buttons.forEach((button) => { button.disabled = true; });
-  showMessage(status === "approved" ? "Approving player..." : "Rejecting registration...");
+  const decision = isPaymentReview
+    ? (value === "verified" ? "Verifying payment..." : "Flagging payment issue...")
+    : (value === "approved" ? "Approving profile..." : "Rejecting profile...");
+  showMessage(decision);
+  const reviewedAt = new Date().toISOString();
+  const update = isPaymentReview
+    ? { payment_status: value, payment_reviewed_at: reviewedAt, payment_reviewed_by: adminUserId }
+    : { status: value, profile_reviewed_at: reviewedAt, profile_reviewed_by: adminUserId };
 
   try {
     const { data, error } = await nextupClient
       .from("player_profiles")
-      .update({ status })
-      .eq("id", playerId)
-      .eq("status", "pending")
+      .update(update)
+      .eq("id", player.id)
+      .eq(field, player[field])
       .select("id")
       .maybeSingle();
 
     if (error) throw error;
     if (!data) {
-      showMessage("This registration was already reviewed. Refreshing the queue.", "error");
+      showMessage(`The ${label} status changed elsewhere. Refreshing profiles.`, "error");
       await loadProfiles();
       return;
     }
 
     const profilesLoaded = await loadProfiles();
     if (!profilesLoaded) return;
-    showMessage(status === "approved" ? "Player approved and added to the public board." : "Registration rejected.");
+    const published = (value === "approved" && player.payment_status === "verified")
+      || (value === "verified" && player.status === "approved");
+    showMessage(published
+      ? "Both reviews are approved. The player is on the public board."
+      : `${label === "payment" ? "Payment" : "Profile"} review updated. The player appears publicly only after both reviews are approved.`);
   } catch (error) {
-    console.error(`Could not set player status to ${status}.`, error);
-    showMessage("The status could not be updated. Check your admin permissions and try again.", "error");
+    console.error(`Could not update ${label} review.`, error);
+    showMessage(`Could not update ${label} review. Check your admin permissions and Supabase setup.`, "error");
     buttons.forEach((button) => { button.disabled = false; });
   }
 }
@@ -309,6 +387,7 @@ async function openAdminDashboard(user) {
 
     loginPanel.hidden = true;
     dashboard.hidden = false;
+    adminUserId = user.id;
     await loadProfiles();
     window.clearInterval(queueRefreshTimer);
     queueRefreshTimer = window.setInterval(() => {
@@ -364,6 +443,7 @@ signOutButton.addEventListener("click", async () => {
 
     dashboard.hidden = true;
     loginPanel.hidden = false;
+    adminUserId = undefined;
     window.clearInterval(queueRefreshTimer);
     loginForm.reset();
     showMessage("You have signed out.");
