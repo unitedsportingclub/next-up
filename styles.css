@@ -168,6 +168,13 @@ h2 { margin-bottom: 0; font-size: clamp(35px, 4vw, 49px); line-height: 1.06; }
 .footer-whatsapp { color: var(--brand-yellow-deep); font-size: 9px; font-weight: 700; }
 .site-footer > p { margin: 0; color: #6e6c66; font-size: 9px; }
 .site-footer > span { color: #77736b; font-size: 7px; letter-spacing: 1px; }
+.whatsapp-fab { position: fixed; right: 20px; bottom: 20px; z-index: 4; display: inline-flex; align-items: center; gap: 9px; padding: 9px 15px 9px 9px; border: 1px solid #111; border-radius: 999px; background: var(--brand-yellow); color: var(--ink); box-shadow: 0 8px 24px #0003; transition: transform .2s, box-shadow .2s; }
+.whatsapp-fab:hover { transform: translateY(-2px); box-shadow: 0 12px 28px #0004; }
+.whatsapp-fab:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+.whatsapp-fab-icon { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: var(--ink); color: var(--brand-yellow); font: 700 10px var(--font-body); }
+.whatsapp-fab-copy { display: grid; gap: 1px; }
+.whatsapp-fab-copy strong { font-size: 10px; }
+.whatsapp-fab-copy small { font-size: 9px; }
 .toast { position: fixed; right: 22px; bottom: 22px; z-index: 5; max-width: calc(100vw - 44px); padding: 13px 17px; background: var(--ink); color: var(--white); border-left: 3px solid var(--brand-yellow); box-shadow: 0 7px 25px #0002; font-size: 11px; opacity: 0; transform: translateY(10px); pointer-events: none; transition: opacity .2s, transform .2s; }
 .toast.visible { opacity: 1; transform: translateY(0); }
 .submission-dialog { width: min(440px, calc(100vw - 32px)); padding: 0; border: 1px solid #e6e8df; background: var(--paper); color: var(--ink); box-shadow: 0 25px 80px #0004; }
@@ -196,4 +203,6 @@ h2 { margin-bottom: 0; font-size: clamp(35px, 4vw, 49px); line-height: 1.06; }
   .how-section { padding: 61px 0; }.how-inner { display: block; }.how-heading { margin-bottom: 36px; }.step { gap: 10px; }
   .join-section { display: block; padding-top: 66px; padding-bottom: 65px; }.join-copy { margin-bottom: 30px; }.profile-form { padding: 20px; }
   .site-footer { flex-wrap: wrap; gap: 12px; padding: 18px 7%; }.site-footer > p { order: 3; width: 100%; }.site-footer > span { font-size: 6px; }
+  .whatsapp-fab { right: 12px; bottom: 12px; gap: 7px; padding: 7px 12px 7px 7px; }
+  .whatsapp-fab-icon { width: 31px; height: 31px; }
 }
