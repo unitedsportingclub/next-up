@@ -6,6 +6,7 @@ const queue = document.querySelector("#admin-queue");
 const message = document.querySelector("#admin-message");
 const signOutButton = document.querySelector("#admin-signout");
 const refreshButton = document.querySelector("#admin-refresh");
+const statusFilter = document.querySelector("#admin-status-filter");
 const photoBucket = "player-images";
 let queueRefreshTimer;
 let queueLoading = false;
@@ -85,6 +86,7 @@ function makePlayerCard(player) {
 
   const details = document.createElement("div");
   details.className = "admin-player-details";
+  addDetail(details, "Status", player.status);
   addDetail(details, "Club", player.club);
   addDetail(details, "Payment reference", player.payment_reference);
   addDetail(details, "Submitted", new Date(player.created_at).toLocaleString());
@@ -116,42 +118,53 @@ function makePlayerCard(player) {
 
   const actions = document.createElement("div");
   actions.className = "admin-player-actions";
-  const reject = document.createElement("button");
-  reject.className = "button admin-reject";
-  reject.type = "button";
-  reject.textContent = "Reject";
-  reject.addEventListener("click", () => updateStatus(player.id, "rejected", actions));
-  const approve = document.createElement("button");
-  approve.className = "button button-primary";
-  approve.type = "button";
-  approve.textContent = "Approve player";
-  approve.addEventListener("click", () => updateStatus(player.id, "approved", actions));
-  actions.append(reject, approve);
+  if (player.status === "pending") {
+    const reject = document.createElement("button");
+    reject.className = "button admin-reject";
+    reject.type = "button";
+    reject.textContent = "Reject";
+    reject.addEventListener("click", () => updateStatus(player.id, "rejected", actions));
+    const approve = document.createElement("button");
+    approve.className = "button button-primary";
+    approve.type = "button";
+    approve.textContent = "Approve player";
+    approve.addEventListener("click", () => updateStatus(player.id, "approved", actions));
+    actions.append(reject, approve);
+  }
+
+  const deleteButton = document.createElement("button");
+  deleteButton.className = "button admin-delete";
+  deleteButton.type = "button";
+  deleteButton.textContent = "Delete profile";
+  deleteButton.addEventListener("click", () => deletePlayerProfile(player, actions));
+  actions.append(deleteButton);
   card.append(actions);
   return card;
 }
 
-async function loadPendingPlayers() {
-  if (queueLoading) return;
+async function loadProfiles() {
+  if (queueLoading) return false;
   queueLoading = true;
+  statusFilter.disabled = true;
+  const status = statusFilter.value;
   queue.replaceChildren();
-  showMessage("Loading pending registrations...");
+  showMessage(status === "all" ? "Loading all profiles..." : `Loading ${status} profiles...`);
 
   try {
-    const { data, error } = await nextupClient
+    let profilesQuery = nextupClient
       .from("player_profiles")
-      .select("id, name, position, age, location, club, payment_reference, created_at, profile_image_path, highlight_video_url")
-      .eq("status", "pending")
-      .order("created_at", { ascending: true });
+      .select("id, name, position, age, location, club, payment_reference, status, created_at, profile_image_path, highlight_video_url");
+    if (status !== "all") profilesQuery = profilesQuery.eq("status", status);
+    const { data, error } = await profilesQuery.order("created_at", { ascending: status === "pending" });
     if (error) throw error;
 
     if (!data.length) {
       const empty = document.createElement("p");
       empty.className = "admin-empty";
-      empty.textContent = "Nothing pending. If you expected a player, check Supabase Table Editor → player_profiles and look for a row with status “pending”.";
+      empty.textContent = status === "all" ? "No player profiles found." : `No ${status} profiles found.`;
       queue.append(empty);
-      showMessage("No pending registrations.");
-      return;
+      showMessage(empty.textContent);
+      return true;
     }
 
     const photoPaths = [...new Set(data.map((player) => player.profile_image_path).filter(Boolean))];
@@ -163,7 +176,7 @@ async function loadPendingPlayers() {
         .createSignedUrls(photoPaths, 900);
       if (photoError) {
         photoLoadError = true;
-        console.error("Could not load photos for pending registrations.", photoError);
+        console.error("Could not load photos for player profiles.", photoError);
       } else {
         photoUrls = new Map((signedPhotos || [])
           .filter((photo) => photo.signedUrl)
@@ -176,15 +189,73 @@ async function loadPendingPlayers() {
       ...player,
       imageUrl: photoUrls.get(player.profile_image_path) || ""
     })));
-    const registrationMessage = `${data.length} registration${data.length === 1 ? "" : "s"} awaiting review.`;
+    const profileCount = `${data.length} ${data.length === 1 ? "profile" : "profiles"}`;
+    const profileMessage = status === "pending"
+      ? `${profileCount} awaiting review.`
+      : `${profileCount} ${status === "all" ? "across all statuses." : `with ${status} status.`}`;
     showMessage(photoLoadError
-      ? `${registrationMessage} Some profile photos could not be loaded.`
-      : registrationMessage, photoLoadError ? "error" : undefined);
+      ? `${profileMessage} Some profile photos could not be loaded.`
+      : profileMessage, photoLoadError ? "error" : undefined);
+    return true;
   } catch (error) {
-    console.error("Could not load pending registrations.", error);
-    showMessage(`Could not load registrations: ${error.message || "check your admin access and Supabase setup."}`, "error");
+    console.error("Could not load player profiles.", error);
+    showMessage(`Could not load profiles: ${error.message || "check your admin access and Supabase setup."}`, "error");
+    return false;
   } finally {
     queueLoading = false;
+    statusFilter.disabled = false;
+  }
+}
+
+async function deletePlayerProfile(player, actions) {
+  const confirmed = window.confirm(
+    `Permanently delete ${player.name}'s profile? This cannot be undone. Its photo will also be removed if available.`
+  );
+  if (!confirmed) return;
+
+  const buttons = actions.querySelectorAll("button");
+  buttons.forEach((button) => { button.disabled = true; });
+  showMessage("Deleting player profile...");
+
+  try {
+    const { data, error } = await nextupClient
+      .from("player_profiles")
+      .delete()
+      .eq("id", player.id)
+      .select("id")
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) {
+      showMessage("This profile was already deleted or could not be found.", "error");
+      await loadProfiles();
+      return;
+    }
+  } catch (error) {
+    console.error("Could not delete player profile.", error);
+    showMessage("Could not delete this profile. Check your admin permissions and try again.", "error");
+    buttons.forEach((button) => { button.disabled = false; });
+    return;
+  }
+
+  let photoCleanupError;
+  if (player.profile_image_path) {
+    try {
+      const { error } = await nextupClient.storage
+        .from(photoBucket)
+        .remove([player.profile_image_path]);
+      if (error) throw error;
+    } catch (error) {
+      photoCleanupError = error;
+      console.error("Profile was deleted, but its photo could not be removed.", error);
+    }
+  }
+
+  const profilesLoaded = await loadProfiles();
+  if (!profilesLoaded) return;
+  if (photoCleanupError) {
+    showMessage("Profile deleted, but its photo could not be removed from storage.", "error");
+  } else {
+    showMessage(player.profile_image_path ? "Player profile and photo deleted." : "Player profile deleted.");
   }
 }
 
@@ -205,11 +276,12 @@ async function updateStatus(playerId, status, actions) {
     if (error) throw error;
     if (!data) {
       showMessage("This registration was already reviewed. Refreshing the queue.", "error");
-      await loadPendingPlayers();
+      await loadProfiles();
       return;
     }
 
-    await loadPendingPlayers();
+    const profilesLoaded = await loadProfiles();
+    if (!profilesLoaded) return;
     showMessage(status === "approved" ? "Player approved and added to the public board." : "Registration rejected.");
   } catch (error) {
     console.error(`Could not set player status to ${status}.`, error);
@@ -237,10 +309,10 @@ async function openAdminDashboard(user) {
 
     loginPanel.hidden = true;
     dashboard.hidden = false;
-    await loadPendingPlayers();
+    await loadProfiles();
     window.clearInterval(queueRefreshTimer);
     queueRefreshTimer = window.setInterval(() => {
-      if (!dashboard.hidden) loadPendingPlayers();
+      if (!dashboard.hidden) loadProfiles();
     }, 15000);
   } catch (error) {
     console.error("Could not verify the admin account.", error);
@@ -274,10 +346,12 @@ loginForm.addEventListener("submit", async (event) => {
   }
 });
 
+statusFilter.addEventListener("change", loadProfiles);
+
 refreshButton.addEventListener("click", async () => {
   refreshButton.disabled = true;
   try {
-    await loadPendingPlayers();
+    await loadProfiles();
   } finally {
     refreshButton.disabled = false;
   }

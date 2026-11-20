@@ -49,11 +49,18 @@
     <section class="admin-dashboard" id="admin-dashboard" hidden>
       <div class="admin-queue-heading">
         <div>
-          <p class="eyebrow">PAYMENT REVIEW</p>
-          <h2>Pending registrations</h2>
+          <p class="eyebrow">PLAYER MANAGEMENT</p>
+          <h2>Player profiles</h2>
         </div>
         <div class="admin-toolbar">
-          <button class="button button-outline admin-refresh" id="admin-refresh" type="button">Refresh queue</button>
+          <label class="visually-hidden" for="admin-status-filter">Filter profiles by status</label>
+          <select class="admin-status-filter" id="admin-status-filter">
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+            <option value="all">All statuses</option>
+          </select>
+          <button class="button button-outline admin-refresh" id="admin-refresh" type="button">Refresh profiles</button>
           <button class="button button-outline admin-signout" id="admin-signout" type="button">Sign out</button>
         </div>
       </div>

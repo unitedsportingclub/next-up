@@ -70,12 +70,21 @@ to authenticated
 using (public.is_nextup_admin() and status = 'pending')
 with check (public.is_nextup_admin() and status in ('approved', 'rejected'));
 
+drop policy if exists "Admins can delete player profiles" on public.player_profiles;
+create policy "Admins can delete player profiles"
+on public.player_profiles
+for delete
+to authenticated
+using (public.is_nextup_admin());
+
 revoke select (name, position, age, location, club, profile_image_path, highlight_video_url)
 on public.player_profiles from public, anon, authenticated;
 revoke select on public.player_profiles from public, anon, authenticated;
 grant select on public.player_profiles to authenticated;
 revoke update on public.player_profiles from public, anon, authenticated;
 grant update (status) on public.player_profiles to authenticated;
+revoke delete on public.player_profiles from public, anon, authenticated;
+grant delete on public.player_profiles to authenticated;
 grant insert (name, position, age, location, club, payment_reference, profile_image_path, highlight_video_url, status)
 on public.player_profiles to anon, authenticated;
 
